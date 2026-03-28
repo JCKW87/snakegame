@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Snake</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hud">
+        <h1>Snake</h1>
+        <p class="sub">
+          Eat food to grow. Avoid <span class="obstacle-legend">obstacles</span> and your own tail — it gets faster as you lengthen.
+        </p>
+        <div class="stats">
+          <span>Score: <strong id="score">0</strong></span>
+          <span>Length: <strong id="length">1</strong></span>
+        </div>
+      </header>
+      <canvas id="game" width="480" height="480" aria-label="Snake game"></canvas>
+      <div
+        class="dpad"
+        role="group"
+        aria-label="Direction controls"
+      >
+        <span class="dpad-placeholder" aria-hidden="true"></span>
+        <button type="button" class="dpad-btn" data-dx="0" data-dy="-1" aria-label="Up">↑</button>
+        <span class="dpad-placeholder" aria-hidden="true"></span>
+        <button type="button" class="dpad-btn" data-dx="-1" data-dy="0" aria-label="Left">←</button>
+        <span class="dpad-placeholder" aria-hidden="true"></span>
+        <button type="button" class="dpad-btn" data-dx="1" data-dy="0" aria-label="Right">→</button>
+        <span class="dpad-placeholder" aria-hidden="true"></span>
+        <button type="button" class="dpad-btn" data-dx="0" data-dy="1" aria-label="Down">↓</button>
+        <span class="dpad-placeholder" aria-hidden="true"></span>
+      </div>
+      <div id="overlay" class="overlay hidden">
+        <div class="panel">
+          <h2 id="overlay-title">Game over</h2>
+          <p id="overlay-msg">You hit something.</p>
+          <button type="button" id="restart">Play again</button>
+        </div>
+      </div>
+      <p class="hint">Use the arrow buttons or keyboard arrow keys · Space to pause</p>
+    </div>
+    <script src="game.js"></script>
+  </body>
+</html>
