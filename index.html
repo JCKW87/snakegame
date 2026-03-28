@@ -11,7 +11,7 @@
       <header class="hud">
         <h1>Snake</h1>
         <p class="sub">
-          Eat <span class="gold-legend">gold</span> food to grow. Avoid <span class="obstacle-legend">gold blocks</span>, the walls, and your tail — it gets faster as you lengthen.
+          Eat <span class="gold-legend">gold</span> fruit with the <span class="snake-legend">green</span> snake. Avoid <span class="obstacle-legend">red blocks</span>, walls, and your tail — it gets faster as you lengthen.
         </p>
         <div class="stats">
           <span>Score: <strong id="score">0</strong></span>
@@ -34,14 +34,17 @@
         <button type="button" class="dpad-btn" data-dx="0" data-dy="1" aria-label="Down">↓</button>
         <span class="dpad-placeholder" aria-hidden="true"></span>
       </div>
-      <div id="overlay" class="overlay hidden">
+      <div id="overlay" class="overlay">
         <div class="panel">
-          <h2 id="overlay-title">Game over</h2>
-          <p id="overlay-msg">You hit something.</p>
-          <button type="button" id="restart">Play again</button>
+          <h2 id="overlay-title">Ready?</h2>
+          <p id="overlay-msg">Press Start when you want to begin.</p>
+          <div class="panel-actions">
+            <button type="button" id="start-btn" class="panel-primary">Start game</button>
+            <button type="button" id="restart" class="panel-primary" hidden>Play again</button>
+          </div>
         </div>
       </div>
-      <p class="hint">Use the arrow buttons or keyboard arrow keys · Space to pause</p>
+      <p class="hint">Press Start to begin · Arrow buttons or keys to move · Space to pause</p>
     </div>
     <script src="game.js"></script>
   </body>

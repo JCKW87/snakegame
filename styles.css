@@ -1,14 +1,14 @@
 :root {
-  --bg: #0a1628;
-  --panel: #132a47;
-  --text: #e8f0ff;
-  --muted: #8ba4c7;
+  --bg: #0c1410;
+  --panel: #15251c;
+  --text: #e8f5ec;
+  --muted: #8fb39a;
   --accent: #d4af37;
-  --snake: #3b82f6;
-  --snake-head: #7eb6ff;
+  --snake: #22c55e;
+  --snake-head: #86efac;
   --food: #e6c04a;
-  --obstacle: #c9a227;
-  --grid: #1e3f66;
+  --obstacle: #ef4444;
+  --grid: #1e3d2a;
 }
 
 * {
@@ -19,7 +19,7 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", system-ui, sans-serif;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, #0f2847 0%, var(--bg) 55%);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, #0f2418 0%, var(--bg) 55%);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -53,6 +53,11 @@ body {
 
 .obstacle-legend {
   color: var(--obstacle);
+  font-weight: 600;
+}
+
+.snake-legend {
+  color: var(--snake-head);
   font-weight: 600;
 }
 
@@ -113,8 +118,8 @@ body {
 }
 
 .dpad-btn:hover {
-  background: #1a3a5c;
-  border-color: var(--snake-head);
+  background: #1a3024;
+  border-color: var(--snake);
 }
 
 .dpad-btn:active {
@@ -169,23 +174,30 @@ body {
   font-size: 0.95rem;
 }
 
-#restart {
+.panel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.panel-primary {
   appearance: none;
   border: none;
   background: var(--accent);
-  color: #0a1628;
+  color: #0c1410;
   font-size: 1rem;
   font-weight: 600;
   padding: 0.65rem 1.5rem;
   border-radius: 8px;
   cursor: pointer;
+  width: 100%;
 }
 
-#restart:hover {
+.panel-primary:hover {
   filter: brightness(1.08);
 }
 
-#restart:focus-visible {
+.panel-primary:focus-visible {
   outline: 2px solid var(--snake-head);
   outline-offset: 3px;
 }

@@ -15,6 +15,7 @@
   const overlay = document.getElementById("overlay");
   const overlayTitle = document.getElementById("overlay-title");
   const overlayMsg = document.getElementById("overlay-msg");
+  const startBtn = document.getElementById("start-btn");
   const restartBtn = document.getElementById("restart");
 
   const cellW = () => canvas.width / COLS;
@@ -30,6 +31,7 @@
   let timer;
   let paused;
   let gameOver;
+  let awaitingStart;
 
   function keyToDir(key) {
     const map = {
@@ -42,7 +44,7 @@
   }
 
   function trySetDir(d) {
-    if (gameOver || paused) return;
+    if (awaitingStart || gameOver || paused) return;
     nextDir = d;
   }
 
@@ -128,9 +130,21 @@
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
-  function showOverlay(title, msg) {
+  function showStartOverlay() {
+    overlayTitle.textContent = "Ready?";
+    overlayMsg.textContent =
+      "Green snake, gold fruit, red obstacles. Press Start when you’re ready.";
+    startBtn.hidden = false;
+    restartBtn.hidden = true;
+    overlay.classList.remove("hidden");
+    startBtn.focus();
+  }
+
+  function showGameOverOverlay(title, msg) {
     overlayTitle.textContent = title;
     overlayMsg.textContent = msg;
+    startBtn.hidden = true;
+    restartBtn.hidden = false;
     overlay.classList.remove("hidden");
   }
 
@@ -138,9 +152,16 @@
     overlay.classList.add("hidden");
   }
 
+  function beginGame() {
+    if (!awaitingStart || gameOver) return;
+    awaitingStart = false;
+    hideOverlay();
+    scheduleTick();
+  }
+
   function scheduleTick() {
     if (timer) clearInterval(timer);
-    if (gameOver || paused) return;
+    if (awaitingStart || gameOver || paused) return;
     timer = setInterval(tick, tickMs);
   }
 
@@ -198,11 +219,12 @@
 
   function endGame(title, msg) {
     gameOver = true;
+    awaitingStart = false;
     if (timer) {
       clearInterval(timer);
       timer = null;
     }
-    showOverlay(title, msg);
+    showGameOverOverlay(title, msg);
     draw();
   }
 
@@ -210,10 +232,10 @@
     const cw = cellW();
     const ch = cellH();
 
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#132a47";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#15251c";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const gridColor = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "#1e3f66";
+    const gridColor = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "#1e3d2a";
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     for (let x = 0; x <= COLS; x++) {
@@ -229,7 +251,7 @@
       ctx.stroke();
     }
 
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#c9a227";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#ef4444";
     for (const o of obstacles) {
       ctx.fillRect(o.x * cw + 1, o.y * ch + 1, cw - 2, ch - 2);
     }
@@ -240,8 +262,8 @@
       ctx.fillRect(food.x * cw + pad, food.y * ch + pad, cw - pad * 2, ch - pad * 2);
     }
 
-    const snakeColor = getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#3b82f6";
-    const headColor = getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#7eb6ff";
+    const snakeColor = getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#22c55e";
+    const headColor = getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#86efac";
     for (let i = snake.length - 1; i >= 0; i--) {
       const s = snake[i];
       ctx.fillStyle = i === 0 ? headColor : snakeColor;
@@ -252,7 +274,7 @@
     if (paused && !gameOver) {
       ctx.fillStyle = "rgba(0,0,0,0.45)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e8f0ff";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e8f5ec";
       ctx.font = "600 22px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -261,11 +283,14 @@
   }
 
   function init() {
-    hideOverlay();
     if (timer) {
       clearInterval(timer);
       timer = null;
     }
+
+    awaitingStart = true;
+    gameOver = false;
+    paused = false;
 
     const startX = Math.floor(COLS / 2);
     const startY = Math.floor(ROWS / 2);
@@ -282,22 +307,27 @@
     lengthEl.textContent = String(snake.length);
     food = placeFood();
     tickMs = tickSpeedForLength(snake.length);
-    paused = false;
-    gameOver = false;
 
     if (!food) {
-      showOverlay("Error", "Could not place food.");
+      awaitingStart = false;
+      gameOver = true;
+      overlayTitle.textContent = "Error";
+      overlayMsg.textContent = "Could not place food.";
+      startBtn.hidden = true;
+      restartBtn.hidden = false;
+      overlay.classList.remove("hidden");
+      draw();
       return;
     }
 
-    scheduleTick();
+    showStartOverlay();
     draw();
   }
 
   window.addEventListener("keydown", (e) => {
     if (e.code === "Space") {
       e.preventDefault();
-      if (gameOver) return;
+      if (awaitingStart || gameOver) return;
       paused = !paused;
       if (paused) {
         if (timer) {
@@ -320,12 +350,15 @@
   document.querySelectorAll(".dpad-btn").forEach((btn) => {
     btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      if (awaitingStart || gameOver || paused) return;
       const dx = Number(btn.dataset.dx);
       const dy = Number(btn.dataset.dy);
       if (Number.isNaN(dx) || Number.isNaN(dy)) return;
       trySetDir({ x: dx, y: dy });
     });
   });
+
+  startBtn.addEventListener("click", () => beginGame());
 
   restartBtn.addEventListener("click", () => init());
 
