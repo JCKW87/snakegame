@@ -59,41 +59,53 @@
   function buildObstacles() {
     const list = [];
     const used = new Set();
-    const center = { x: Math.floor(COLS / 2), y: Math.floor(ROWS / 2) };
+    const cx = Math.floor(COLS / 2);
+    const cy = Math.floor(ROWS / 2);
 
     function add(x, y) {
       const k = `${x},${y}`;
       if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
-      if (Math.abs(x - center.x) <= 1 && Math.abs(y - center.y) <= 1) return;
+      if (Math.abs(x - cx) <= 3 && Math.abs(y - cy) <= 2) return;
       if (used.has(k)) return;
       used.add(k);
       list.push({ x, y });
     }
 
-    // Border pillars (sparse) + inner blocks
-    for (let i = 3; i < COLS - 3; i += 4) {
-      add(i, 2);
-      add(i, ROWS - 3);
+    const cr = COLS - 1;
+    const br = ROWS - 1;
+    [
+      [2, 2],
+      [3, 2],
+      [2, 3],
+      [3, 3],
+      [cr - 2, 2],
+      [cr - 3, 2],
+      [cr - 2, 3],
+      [cr - 3, 3],
+      [2, br - 2],
+      [3, br - 2],
+      [2, br - 3],
+      [3, br - 3],
+      [cr - 2, br - 2],
+      [cr - 3, br - 2],
+      [cr - 2, br - 3],
+      [cr - 3, br - 3],
+    ].forEach(([x, y]) => add(x, y));
+
+    for (let x = 5; x <= 7; x++) add(x, 6);
+    for (let x = 16; x <= 18; x++) add(x, 6);
+    for (let x = 5; x <= 7; x++) add(x, br - 6);
+    for (let x = 16; x <= 18; x++) add(x, br - 6);
+
+    for (let y = 9; y <= 10; y++) {
+      add(5, y);
+      add(cr - 5, y);
     }
-    for (let j = 4; j < ROWS - 4; j += 5) {
-      add(2, j);
-      add(COLS - 3, j);
+    for (let y = 13; y <= 14; y++) {
+      add(5, y);
+      add(cr - 5, y);
     }
-    // Cross in the middle (with gap for movement)
-    const midX = Math.floor(COLS / 2);
-    const midY = Math.floor(ROWS / 2);
-    for (let d = 4; d <= 7; d++) {
-      add(midX - d, midY);
-      add(midX + d, midY);
-      add(midX, midY - d);
-      add(midX, midY + d);
-    }
-    // Random scatter
-    let tries = 0;
-    while (list.length < 42 && tries < 400) {
-      tries++;
-      add(Math.floor(Math.random() * COLS), Math.floor(Math.random() * ROWS));
-    }
+
     return list;
   }
 
@@ -198,10 +210,10 @@
     const cw = cellW();
     const ch = cellH();
 
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#1a2332";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "#132a47";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const gridColor = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "#21262d";
+    const gridColor = getComputedStyle(document.documentElement).getPropertyValue("--grid").trim() || "#1e3f66";
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     for (let x = 0; x <= COLS; x++) {
@@ -217,19 +229,19 @@
       ctx.stroke();
     }
 
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#f85149";
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#c9a227";
     for (const o of obstacles) {
       ctx.fillRect(o.x * cw + 1, o.y * ch + 1, cw - 2, ch - 2);
     }
 
     if (food) {
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--food").trim() || "#f0883e";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--food").trim() || "#e6c04a";
       const pad = 3;
       ctx.fillRect(food.x * cw + pad, food.y * ch + pad, cw - pad * 2, ch - pad * 2);
     }
 
-    const snakeColor = getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#58a6ff";
-    const headColor = getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#79c0ff";
+    const snakeColor = getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#3b82f6";
+    const headColor = getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#7eb6ff";
     for (let i = snake.length - 1; i >= 0; i--) {
       const s = snake[i];
       ctx.fillStyle = i === 0 ? headColor : snakeColor;
@@ -240,7 +252,7 @@
     if (paused && !gameOver) {
       ctx.fillStyle = "rgba(0,0,0,0.45)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#e6edf3";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#e8f0ff";
       ctx.font = "600 22px system-ui, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";

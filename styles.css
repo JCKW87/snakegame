@@ -1,14 +1,14 @@
 :root {
-  --bg: #0f1419;
-  --panel: #1a2332;
-  --text: #e6edf3;
-  --muted: #8b9cb3;
-  --accent: #3ecf8e;
-  --snake: #58a6ff;
-  --snake-head: #79c0ff;
-  --food: #f0883e;
-  --obstacle: #f85149;
-  --grid: #21262d;
+  --bg: #0a1628;
+  --panel: #132a47;
+  --text: #e8f0ff;
+  --muted: #8ba4c7;
+  --accent: #d4af37;
+  --snake: #3b82f6;
+  --snake-head: #7eb6ff;
+  --food: #e6c04a;
+  --obstacle: #c9a227;
+  --grid: #1e3f66;
 }
 
 * {
@@ -19,7 +19,7 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", system-ui, sans-serif;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, #1c2836 0%, var(--bg) 55%);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, #0f2847 0%, var(--bg) 55%);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -44,6 +44,11 @@ body {
   font-size: 0.9rem;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.gold-legend {
+  color: var(--food);
+  font-weight: 600;
 }
 
 .obstacle-legend {
@@ -108,8 +113,8 @@ body {
 }
 
 .dpad-btn:hover {
-  background: #243044;
-  border-color: var(--snake);
+  background: #1a3a5c;
+  border-color: var(--snake-head);
 }
 
 .dpad-btn:active {
@@ -168,7 +173,7 @@ body {
   appearance: none;
   border: none;
   background: var(--accent);
-  color: #0a0e12;
+  color: #0a1628;
   font-size: 1rem;
   font-weight: 600;
   padding: 0.65rem 1.5rem;
