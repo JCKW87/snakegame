@@ -7,6 +7,12 @@
   const MIN_MS = 55;
   const SPEED_STEP_MS = 8;
   const SPEED_EVERY_N_LENGTH = 2;
+  const TARGET_OBSTACLES = 36;
+  const OBSTACLE_PLACE_ATTEMPTS = 2500;
+  const LB_KEY = "snake-leaderboard-v1";
+  const LB_MAX_ENTRIES = 3;
+  const LB_MIN_SCORE = 10;
+  const LB_MAX_NAME_LEN = 5;
 
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
@@ -17,6 +23,11 @@
   const overlayMsg = document.getElementById("overlay-msg");
   const startBtn = document.getElementById("start-btn");
   const restartBtn = document.getElementById("restart");
+  const gameOverForm = document.getElementById("game-over-form");
+  const lbNameInput = document.getElementById("lb-name");
+  const lbSaveBtn = document.getElementById("lb-save");
+  const lbSaveStatus = document.getElementById("lb-save-status");
+  const leaderboardList = document.getElementById("leaderboard-list");
 
   const cellW = () => canvas.width / COLS;
   const cellH = () => canvas.height / ROWS;
@@ -32,6 +43,83 @@
   let paused;
   let gameOver;
   let awaitingStart;
+  let pendingLeaderboardScore;
+  let scoreSavedThisRun;
+
+  function isLeaderboardFieldFocused() {
+    const el = document.activeElement;
+    return el === lbNameInput;
+  }
+
+  function loadLeaderboardRaw() {
+    try {
+      const raw = localStorage.getItem(LB_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(
+        (e) =>
+          e &&
+          typeof e.name === "string" &&
+          typeof e.score === "number" &&
+          Number.isFinite(e.score)
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  function normalizeLeaderboardList(list) {
+    return list
+      .filter((e) => e.score >= LB_MIN_SCORE)
+      .sort((a, b) => b.score - a.score || b.at - a.at)
+      .slice(0, LB_MAX_ENTRIES);
+  }
+
+  function loadLeaderboard() {
+    return normalizeLeaderboardList(loadLeaderboardRaw());
+  }
+
+  function saveLeaderboardEntry(name, gameScore) {
+    if (!Number.isFinite(gameScore) || gameScore < LB_MIN_SCORE) return false;
+    const trimmed = name.trim().slice(0, LB_MAX_NAME_LEN);
+    if (trimmed.length === 0) return false;
+    const merged = loadLeaderboardRaw().concat({
+      name: trimmed,
+      score: gameScore,
+      at: Date.now(),
+    });
+    const next = normalizeLeaderboardList(merged);
+    localStorage.setItem(LB_KEY, JSON.stringify(next));
+    renderLeaderboard();
+    return true;
+  }
+
+  function renderLeaderboard() {
+    leaderboardList.replaceChildren();
+    const entries = loadLeaderboard();
+    if (entries.length === 0) {
+      const li = document.createElement("li");
+      li.className = "lb-empty";
+      li.textContent = `No top scores yet — score ${LB_MIN_SCORE}+ and save after game over.`;
+      leaderboardList.appendChild(li);
+      return;
+    }
+    entries.forEach((entry, i) => {
+      const li = document.createElement("li");
+      const rank = document.createElement("span");
+      rank.className = "lb-rank";
+      rank.textContent = `${i + 1}.`;
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "lb-name";
+      nameSpan.textContent = entry.name;
+      const scoreSpan = document.createElement("span");
+      scoreSpan.className = "lb-score";
+      scoreSpan.textContent = String(entry.score);
+      li.append(rank, nameSpan, scoreSpan);
+      leaderboardList.appendChild(li);
+    });
+  }
 
   function keyToDir(key) {
     const map = {
@@ -64,50 +152,23 @@
     const cx = Math.floor(COLS / 2);
     const cy = Math.floor(ROWS / 2);
 
-    function add(x, y) {
+    function canPlace(x, y) {
+      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return false;
+      if (Math.abs(x - cx) <= 3 && Math.abs(y - cy) <= 2) return false;
       const k = `${x},${y}`;
-      if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return;
-      if (Math.abs(x - cx) <= 3 && Math.abs(y - cy) <= 2) return;
-      if (used.has(k)) return;
-      used.add(k);
+      if (used.has(k)) return false;
+      return true;
+    }
+
+    let attempts = 0;
+    while (list.length < TARGET_OBSTACLES && attempts < OBSTACLE_PLACE_ATTEMPTS) {
+      attempts++;
+      const x = Math.floor(Math.random() * COLS);
+      const y = Math.floor(Math.random() * ROWS);
+      if (!canPlace(x, y)) continue;
+      used.add(`${x},${y}`);
       list.push({ x, y });
     }
-
-    const cr = COLS - 1;
-    const br = ROWS - 1;
-    [
-      [2, 2],
-      [3, 2],
-      [2, 3],
-      [3, 3],
-      [cr - 2, 2],
-      [cr - 3, 2],
-      [cr - 2, 3],
-      [cr - 3, 3],
-      [2, br - 2],
-      [3, br - 2],
-      [2, br - 3],
-      [3, br - 3],
-      [cr - 2, br - 2],
-      [cr - 3, br - 2],
-      [cr - 2, br - 3],
-      [cr - 3, br - 3],
-    ].forEach(([x, y]) => add(x, y));
-
-    for (let x = 5; x <= 7; x++) add(x, 6);
-    for (let x = 16; x <= 18; x++) add(x, 6);
-    for (let x = 5; x <= 7; x++) add(x, br - 6);
-    for (let x = 16; x <= 18; x++) add(x, br - 6);
-
-    for (let y = 9; y <= 10; y++) {
-      add(5, y);
-      add(cr - 5, y);
-    }
-    for (let y = 13; y <= 14; y++) {
-      add(5, y);
-      add(cr - 5, y);
-    }
-
     return list;
   }
 
@@ -133,7 +194,8 @@
   function showStartOverlay() {
     overlayTitle.textContent = "Ready?";
     overlayMsg.textContent =
-      "Green snake, gold fruit, red obstacles. Press Start when you’re ready.";
+      "Green snake, gold fruit, red dots. Press Start when you’re ready.";
+    gameOverForm.hidden = true;
     startBtn.hidden = false;
     restartBtn.hidden = true;
     overlay.classList.remove("hidden");
@@ -142,10 +204,24 @@
 
   function showGameOverOverlay(title, msg) {
     overlayTitle.textContent = title;
-    overlayMsg.textContent = msg;
+    const canSave = pendingLeaderboardScore >= LB_MIN_SCORE;
+    overlayMsg.textContent = canSave
+      ? msg
+      : `${msg} You need at least ${LB_MIN_SCORE} points to save to the top ${LB_MAX_ENTRIES}.`;
+    gameOverForm.hidden = !canSave;
+    if (canSave) {
+      lbNameInput.value = "";
+      lbSaveStatus.hidden = true;
+      lbSaveStatus.textContent = "";
+      lbSaveStatus.classList.remove("is-error");
+      lbSaveBtn.disabled = false;
+      scoreSavedThisRun = false;
+    }
     startBtn.hidden = true;
     restartBtn.hidden = false;
     overlay.classList.remove("hidden");
+    if (canSave) lbNameInput.focus();
+    else restartBtn.focus();
   }
 
   function hideOverlay() {
@@ -220,12 +296,25 @@
   function endGame(title, msg) {
     gameOver = true;
     awaitingStart = false;
+    pendingLeaderboardScore = score;
     if (timer) {
       clearInterval(timer);
       timer = null;
     }
     showGameOverOverlay(title, msg);
     draw();
+  }
+
+  function drawCellCircle(gx, gy, radiusFrac, fillStyle) {
+    const cw = cellW();
+    const ch = cellH();
+    const px = gx * cw + cw / 2;
+    const py = gy * ch + ch / 2;
+    const r = (Math.min(cw, ch) / 2) * radiusFrac;
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    ctx.arc(px, py, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function draw() {
@@ -251,24 +340,27 @@
       ctx.stroke();
     }
 
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#ef4444";
+    const obstacleColor =
+      getComputedStyle(document.documentElement).getPropertyValue("--obstacle").trim() || "#ef4444";
     for (const o of obstacles) {
-      ctx.fillRect(o.x * cw + 1, o.y * ch + 1, cw - 2, ch - 2);
+      drawCellCircle(o.x, o.y, 0.42, obstacleColor);
     }
 
     if (food) {
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--food").trim() || "#e6c04a";
-      const pad = 3;
-      ctx.fillRect(food.x * cw + pad, food.y * ch + pad, cw - pad * 2, ch - pad * 2);
+      const foodColor =
+        getComputedStyle(document.documentElement).getPropertyValue("--food").trim() || "#e6c04a";
+      drawCellCircle(food.x, food.y, 0.38, foodColor);
     }
 
-    const snakeColor = getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#22c55e";
-    const headColor = getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#86efac";
+    const snakeColor =
+      getComputedStyle(document.documentElement).getPropertyValue("--snake").trim() || "#22c55e";
+    const headColor =
+      getComputedStyle(document.documentElement).getPropertyValue("--snake-head").trim() || "#86efac";
     for (let i = snake.length - 1; i >= 0; i--) {
       const s = snake[i];
-      ctx.fillStyle = i === 0 ? headColor : snakeColor;
-      const inset = i === 0 ? 2 : 3;
-      ctx.fillRect(s.x * cw + inset, s.y * ch + inset, cw - inset * 2, ch - inset * 2);
+      const c = i === 0 ? headColor : snakeColor;
+      const frac = i === 0 ? 0.46 : 0.4;
+      drawCellCircle(s.x, s.y, frac, c);
     }
 
     if (paused && !gameOver) {
@@ -283,6 +375,8 @@
   }
 
   function init() {
+    renderLeaderboard();
+
     if (timer) {
       clearInterval(timer);
       timer = null;
@@ -313,9 +407,11 @@
       gameOver = true;
       overlayTitle.textContent = "Error";
       overlayMsg.textContent = "Could not place food.";
+      gameOverForm.hidden = true;
       startBtn.hidden = true;
       restartBtn.hidden = false;
       overlay.classList.remove("hidden");
+      restartBtn.focus();
       draw();
       return;
     }
@@ -325,6 +421,8 @@
   }
 
   window.addEventListener("keydown", (e) => {
+    if (isLeaderboardFieldFocused()) return;
+
     if (e.code === "Space") {
       e.preventDefault();
       if (awaitingStart || gameOver) return;
@@ -361,6 +459,35 @@
   startBtn.addEventListener("click", () => beginGame());
 
   restartBtn.addEventListener("click", () => init());
+
+  function submitLeaderboardScore() {
+    if (scoreSavedThisRun) return;
+    if (pendingLeaderboardScore < LB_MIN_SCORE) return;
+    const raw = lbNameInput.value.trim();
+    if (raw.length === 0) {
+      lbSaveStatus.hidden = false;
+      lbSaveStatus.classList.add("is-error");
+      lbSaveStatus.textContent = "Enter 1–5 characters for your name.";
+      return;
+    }
+    const name = raw.slice(0, LB_MAX_NAME_LEN);
+    const ok = saveLeaderboardEntry(name, pendingLeaderboardScore);
+    if (!ok) return;
+    scoreSavedThisRun = true;
+    lbSaveStatus.hidden = false;
+    lbSaveStatus.classList.remove("is-error");
+    lbSaveStatus.textContent = "Saved to leaderboard.";
+    lbSaveBtn.disabled = true;
+  }
+
+  lbSaveBtn.addEventListener("click", () => submitLeaderboardScore());
+
+  lbNameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitLeaderboardScore();
+    }
+  });
 
   init();
 })();

@@ -11,12 +11,16 @@
       <header class="hud">
         <h1>Snake</h1>
         <p class="sub">
-          Eat <span class="gold-legend">gold</span> fruit with the <span class="snake-legend">green</span> snake. Avoid <span class="obstacle-legend">red blocks</span>, walls, and your tail — it gets faster as you lengthen.
+          Eat <span class="gold-legend">gold</span> fruit with the <span class="snake-legend">green</span> snake. Avoid <span class="obstacle-legend">red dots</span>, walls, and your tail — it gets faster as you lengthen.
         </p>
         <div class="stats">
           <span>Score: <strong id="score">0</strong></span>
           <span>Length: <strong id="length">1</strong></span>
         </div>
+        <section class="leaderboard" aria-labelledby="lb-heading" aria-label="Top 3 leaderboard">
+          <h2 id="lb-heading" class="lb-heading">Top 3</h2>
+          <ol id="leaderboard-list" class="lb-list"></ol>
+        </section>
       </header>
       <canvas id="game" width="480" height="480" aria-label="Snake game"></canvas>
       <div
@@ -38,6 +42,22 @@
         <div class="panel">
           <h2 id="overlay-title">Ready?</h2>
           <p id="overlay-msg">Press Start when you want to begin.</p>
+          <div id="game-over-form" class="game-over-form" hidden>
+            <label class="lb-name-label" for="lb-name">Name <span class="name-hint">(max 5 characters)</span></label>
+            <input
+              type="text"
+              id="lb-name"
+              class="lb-name-input"
+              maxlength="5"
+              autocomplete="nickname"
+              inputmode="text"
+              spellcheck="false"
+              aria-describedby="lb-name-desc"
+            />
+            <p id="lb-name-desc" class="lb-name-desc">Runs with 10+ points can be saved (top 3). Name: up to 5 characters.</p>
+            <button type="button" id="lb-save" class="panel-secondary">Save to leaderboard</button>
+            <p id="lb-save-status" class="lb-save-status" hidden></p>
+          </div>
           <div class="panel-actions">
             <button type="button" id="start-btn" class="panel-primary">Start game</button>
             <button type="button" id="restart" class="panel-primary" hidden>Play again</button>
